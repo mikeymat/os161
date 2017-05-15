@@ -153,13 +153,24 @@ lock_create(const char *name)
                 kfree(lock);
                 return NULL;
         }
+        
+        /*
+         *  It's necessary define a wait channel in
+         *  order to implement sleep and wake
+         */
 
-        // add stuff here as needed
-        lock->lk_sem = sem_create(name,1);
-        if(lock->lk_sem == NULL){
+        lock->lk_wchan = wchan_create(name);
+        if(lock->lk_wchan == NULL){
             kfree(lock->lk_name);
             kfree(lock);
+            return NULL;
         }
+
+
+        /*
+         *  Defining a spinlock in order to protect the wait channel
+         *  the wait channel and the owner_t filed during writing operation
+         */
 
         spinlock_init(&lock->spl);
         lock->owner_t = NULL;
@@ -172,12 +183,10 @@ lock_destroy(struct lock *lock)
 {
         KASSERT(lock != NULL);
 
-        // add stuff here as needed
-        
-        sem_destroy(lock->lk_sem);
+        wchan_destroy(lock->lk_wchan);
         spinlock_cleanup(&lock->spl);
 
-        kfree((void *)lock->owner_t);
+        lock->owner_t = NULL;
         kfree(lock->lk_name);
         kfree(lock);
 }
@@ -186,40 +195,53 @@ void
 lock_acquire(struct lock *lock)
 {
         KASSERT(lock != NULL);
+        KASSERT(curthread->t_in_interrupt == false);
 
-
-        P(lock->lk_sem);
+        /*
+         *  Wait on condition: no-one thread must not hold the lock
+         *  If the lock have an owner, the requesting thread will have to sleep
+         */
 
         spinlock_acquire(&lock->spl);
-            lock->owner_t = curthread;
-        spinlock_release(&lock->spl);
 
-        //(void)lock;
+            while(lock->owner_t != NULL){
+                wchan_sleep(lock->lk_wchan,&lock->spl);
+            }
+            KASSERT(lock->owner_t == NULL);
+
+            //Set the new owner 
+            lock->owner_t = curthread;
+
+        spinlock_release(&lock->spl);
 }
 
 void
 lock_release(struct lock *lock)
 {
     KASSERT(lock != NULL);
-    
-    
+     
+    //Only the owner can realease it
     KASSERT(lock->owner_t == curthread);
-    V(lock->lk_sem);
+   
+    /*
+     *  Set the owner_t field to null:
+     *  no-one holds the lock and then wake a thread 
+     *  which was been to sleep
+     */
     spinlock_acquire(&lock->spl);
         lock->owner_t = NULL;
+        KASSERT(lock->owner_t == NULL);
+        wchan_wakeone(lock->lk_wchan,&lock->spl);
     spinlock_release(&lock->spl);
-
 }
 
 bool
 lock_do_i_hold(struct lock *lock)
 {
-        // Write this
        if(lock->owner_t != curthread){
             return false;
         }
-       //(void)lock;  // suppress warning until code gets written
-        return true; // dummy until code gets written
+        return true;
 }
 
 ////////////////////////////////////////////////////////////
@@ -244,12 +266,12 @@ cv_create(const char *name)
         }
 
         // add stuff here as needed
-        cv->cv_wchan = wchan_create(cv->cv_name);
+       /* cv->cv_wchan = wchan_create(cv->cv_name);
         if (cv->cv_wchan == NULL) {
         kfree(cv->cv_name);
         kfree(cv);
         return NULL;
-    }
+    }*/
         return cv;
 }
 
@@ -259,7 +281,7 @@ cv_destroy(struct cv *cv)
         KASSERT(cv != NULL);
 
         // add stuff here as needed
-        wchan_destroy(cv->cv_wchan);
+       // wchan_destroy(cv->cv_wchan);
 
         kfree(cv->cv_name);
         kfree(cv);
