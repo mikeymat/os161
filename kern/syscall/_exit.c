@@ -14,8 +14,12 @@
 void _exit(int code){
 
 	struct thread *t;
+	struct proc *p;
 	t = curthread;
+	p = t->t_proc;
 	t->exit_code = code;
+	proc_remthread(t);
+	KASSERT(t->t_proc == NULL);
+	proc_destroy(p);
 	thread_exit();
-	kprintf("Exit with code %d",code);
 }

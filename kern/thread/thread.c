@@ -777,21 +777,23 @@ void
 thread_exit(void)
 {
 	struct thread *cur;
-	struct proc *p;
+	//struct proc *p;
 
 	cur = curthread;
-	p = cur->t_proc;
+	//p = cur->t_proc;
 
 	/*
 	 * Detach from our process. You might need to move this action
 	 * around, depending on how your wait/exit works.
 	 */
-	proc_remthread(cur);
+	if(cur->t_proc != NULL){
+		proc_remthread(cur);
+	}
 
 	/* Make sure we *are* detached (move this only if you're sure!) */
 	KASSERT(cur->t_proc == NULL);
 	
-	proc_destroy(p);
+	//proc_destroy(p);
 
 	/* Check the stack guard band. */
 	thread_checkstack(cur);
