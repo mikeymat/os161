@@ -117,7 +117,7 @@ getfreepages(unsigned long npages){
 	if(busyRamFrame!= NULL){
 		for(unsigned int i = 0 ; i < RAM_FRAME; i++){
 		
-			/*zero rapresent a free pages, a value != rapresent the number of occupied pages*/
+			/*zero rapresent a free pages, a value != rapresent the number of busy pages, -1 not allocated*/
 			if(busyRamFrame[i] > 0){
 				/*if there is a block of occupied pages, jump to the next
 			  	block updating i*/
@@ -146,7 +146,7 @@ getfreepages(unsigned long npages){
 	return addr;
 }
 
-static int freeppages(paddr_t addr, unsigned long npages){
+static int freeppages(paddr_t addr){
 
 	int first;
 	
@@ -155,9 +155,10 @@ static int freeppages(paddr_t addr, unsigned long npages){
 
 	spinlock_acquire(&freemem_lock);
 	
-	for(unsigned int i = first; i < first + npages; i++){
+	/*for(unsigned int i = first; i < first + npages; i++){
 		busyRamFrame[i] = 0;
-	}
+	}*/
+	busyRamFrame[first] = 0;
 
 	spinlock_release(&freemem_lock);
 
@@ -183,6 +184,9 @@ getppages(unsigned long npages)
 	if(busyRamFrame != NULL){
 		int first = addr/PAGE_SIZE;
 		busyRamFrame[first] = npages; 
+		for(unsigned int i = first + 1; i < first + npages; i++){
+			busyRamFrame[i] = 0;
+		}
 	}
 
 	spinlock_release(&stealmem_lock);
@@ -209,7 +213,7 @@ free_kpages(vaddr_t addr)
 	paddr_t paddr = addr - MIPS_KSEG0;
 	unsigned long first = paddr/PAGE_SIZE;
 	KASSERT(RAM_FRAME > first);
-	freeppages(paddr,busyRamFrame[first]);
+	freeppages(paddr);//,busyRamFrame[first]);
 }
 
 void
@@ -343,9 +347,9 @@ void
 as_destroy(struct addrspace *as)
 {
 	dumbvm_can_sleep();
-	freeppages(as->as_pbase1,as->as_npages1);
-	freeppages(as->as_pbase2,as->as_npages2);
-	freeppages(as->as_stackpbase,DUMBVM_STACKPAGES);
+	freeppages(as->as_pbase1);//,as->as_npages1);
+	freeppages(as->as_pbase2);//,as->as_npages2);
+	freeppages(as->as_stackpbase);//,DUMBVM_STACKPAGES);
 	kfree(as);
 }
 
