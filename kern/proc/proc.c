@@ -48,15 +48,20 @@
 #include <current.h>
 #include <addrspace.h>
 #include <vnode.h>
+#include <synch.h>
+#include <limits.h>
 
+#define DIM_MAX 100
 /*
  * The process for the kernel; this holds all the kernel-only threads.
  */
 struct proc *kproc;
-
+struct proc **proc_table;
 /*
  * Create a proc structure.
  */
+void assing_pid(struct proc *proc);
+
 static
 struct proc *
 proc_create(const char *name)
@@ -73,6 +78,9 @@ proc_create(const char *name)
 		return NULL;
 	}
 
+	/**/
+	proc->proc_sem = sem_create(proc->p_name,0);
+
 	proc->p_numthreads = 0;
 	spinlock_init(&proc->p_lock);
 
@@ -82,6 +90,8 @@ proc_create(const char *name)
 	/* VFS fields */
 	proc->p_cwd = NULL;
 
+	/*assign pid */
+	assing_pid(proc);
 	return proc;
 }
 
@@ -110,6 +120,9 @@ proc_destroy(struct proc *proc)
 	 * reference to this structure. (Otherwise it would be
 	 * incorrect to destroy it.)
 	 */
+	unsigned int pid =(unsigned int) (proc->pid - __PID_MIN);
+	proc_table[pid] = NULL;
+
 
 	/* VFS fields */
 	if (proc->p_cwd) {
@@ -167,6 +180,9 @@ proc_destroy(struct proc *proc)
 
 	KASSERT(proc->p_numthreads == 0);
 	spinlock_cleanup(&proc->p_lock);
+	
+	/**/
+	sem_destroy(proc->proc_sem);
 
 	kfree(proc->p_name);
 	kfree(proc);
@@ -178,10 +194,16 @@ proc_destroy(struct proc *proc)
 void
 proc_bootstrap(void)
 {
+	proc_table = kmalloc((DIM_MAX)*sizeof(struct proc*));
+	for(int i = 0; i < DIM_MAX ; i++){
+		proc_table[i] = NULL;
+	}
+
 	kproc = proc_create("[kernel]");
 	if (kproc == NULL) {
 		panic("proc_create for kproc failed\n");
 	}
+	
 }
 
 /*
@@ -316,4 +338,37 @@ proc_setas(struct addrspace *newas)
 	proc->p_addrspace = newas;
 	spinlock_release(&proc->p_lock);
 	return oldas;
+}
+
+int wait_proc(struct proc *p){
+
+	int exitcode;
+	KASSERT(p != NULL);
+
+	P(p->proc_sem);
+
+	exitcode = p->exitcode;
+
+	proc_destroy(p);
+	
+	return exitcode;
+}
+
+void assing_pid(struct proc *proc){
+
+	int i;
+	for(i=0; i < DIM_MAX; i++){
+		if(proc_table[i]==NULL){
+			proc_table[i] = proc;
+			proc->pid = (pid_t)(i + __PID_MIN);
+			return;
+		}
+	}
+
+	KASSERT(i < 100);
+}
+
+struct proc* proc_from_table(pid_t pid){
+	unsigned int index = (unsigned int) (pid -__PID_MIN);
+	return proc_table[index];
 }

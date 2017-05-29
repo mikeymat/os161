@@ -378,6 +378,7 @@ file      syscall/runprogram.c
 file      syscall/time_syscalls.c
 file	  syscall/stdio_syscalls.c
 file	  syscall/_exit.c
+file	  syscall/wait_pid.c
 
 #
 # Startup and initialization

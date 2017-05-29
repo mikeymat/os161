@@ -128,6 +128,8 @@ common_prog(int nargs, char **args)
 	if (result) {
 		kprintf("thread_fork failed: %s\n", strerror(result));
 		proc_destroy(proc);
+		int code = wait_proc(proc);
+		kprintf("\nExit code: %d\n",code);
 		return result;
 	}
 
@@ -135,6 +137,9 @@ common_prog(int nargs, char **args)
 	 * The new process will be destroyed when the program exits...
 	 * once you write the code for handling that.
 	 */
+	//int code = wait_proc(proc);
+	int code = wait_pid(proc->pid);
+	kprintf("\nExit code: %d\n",code);
 
 	return 0;
 }

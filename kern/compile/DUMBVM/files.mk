@@ -96,6 +96,7 @@ SRCS+=$(KTOP)/syscall/loadelf.c
 SRCS+=$(KTOP)/syscall/runprogram.c
 SRCS+=$(KTOP)/syscall/stdio_syscalls.c
 SRCS+=$(KTOP)/syscall/time_syscalls.c
+SRCS+=$(KTOP)/syscall/wait_pid.c
 SRCS+=$(KTOP)/test/arraytest.c
 SRCS+=$(KTOP)/test/bitmaptest.c
 SRCS+=$(KTOP)/test/fstest.c

@@ -37,6 +37,7 @@
  */
 
 #include <spinlock.h>
+#include <types.h>
 
 struct addrspace;
 struct thread;
@@ -70,6 +71,11 @@ struct proc {
 	/* VFS */
 	struct vnode *p_cwd;		/* current working directory */
 
+	struct semaphore *proc_sem;
+
+	int exitcode;
+
+	pid_t pid;
 	/* add more material here as needed */
 };
 
@@ -97,5 +103,10 @@ struct addrspace *proc_getas(void);
 /* Change the address space of the current process, and return the old one. */
 struct addrspace *proc_setas(struct addrspace *);
 
+int wait_proc(struct proc *p);
+
+void assign_pid(struct proc *proc);
+
+struct proc* proc_from_table(pid_t pid);
 
 #endif /* _PROC_H_ */

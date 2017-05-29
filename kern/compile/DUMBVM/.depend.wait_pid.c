@@ -1,4 +1,4 @@
-_exit.o: ../../syscall/_exit.c ../../include/types.h \
+wait_pid.o: ../../syscall/wait_pid.c ../../include/types.h \
  ../../include/kern/types.h includelinks/kern/machine/types.h \
  includelinks/machine/types.h ../../include/kern/errno.h \
  ../../include/kern/fcntl.h ../../include/lib.h ../../include/cdefs.h \
@@ -9,5 +9,4 @@ _exit.o: ../../syscall/_exit.c ../../include/types.h \
  includelinks/machine/thread.h ../../include/setjmp.h \
  includelinks/kern/machine/setjmp.h ../../include/addrspace.h \
  ../../include/vm.h includelinks/machine/vm.h opt-dumbvm.h \
- ../../include/vfs.h ../../include/syscall.h ../../include/test.h \
- ../../include/synch.h
+ ../../include/vfs.h ../../include/syscall.h ../../include/test.h

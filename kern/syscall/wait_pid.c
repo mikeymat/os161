@@ -10,19 +10,13 @@
 #include <syscall.h>
 #include <test.h>
 #include <thread.h>
-#include <synch.h>
 
-void _exit(int code){
+int wait_pid(pid_t pid){
 
-	struct thread *t;
 	struct proc *p;
-	t = curthread;
-	p = t->t_proc;
-	t->exit_code = code;
-	proc_remthread(t);
-	KASSERT(t->t_proc == NULL);
 
-	p->exitcode = code;
-	V(p->proc_sem);
-	thread_exit();
+	p = proc_from_table(pid);
+
+	KASSERT(p != NULL);
+	return wait_proc(p);
 }
