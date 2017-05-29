@@ -610,6 +610,9 @@ thread_switch(threadstate_t newstate, struct wchan *wc, struct spinlock *lk)
 		 * on the list.
 		 */
 		threadlist_addtail(&wc->wc_threads, cur);
+		//only if wchan has spinlock can release
+		KASSERT(spinlock_do_i_hold(lk));
+		
 		spinlock_release(lk);
 		break;
 	    case S_ZOMBIE:

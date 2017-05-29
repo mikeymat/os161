@@ -117,6 +117,23 @@ bool lock_do_i_hold(struct lock *);
 struct cv {
         char *cv_name;
         struct wchan *cv_wchan;
+        struct spinlock spl;
+        //volatile int waitcount; 
+        // alternativa con waitcount ma è più robusta 
+        //se garantisco atomicità per costruzione
+        //posso fare una release del lock dopo l' acquisizione di uno spinlock
+        //la criticità sta se acquisisco uno spinlock e poi vado in lock acquire
+        //non si puà andare in wait on più di uno spinlock concesso.
+
+        //Nella mia soluzione nella wait incremento il waitcount 
+        //e poi faccio lock release, poi spinlock acquire  e prima di andare
+        //in whan_sleep testo il wait count, così facendo dopo al release del lock
+        //apro una sezione critica dove qualcuno si può inserire con una signal.
+        //Se invece faccio lo spinlock acquire
+        //prima della release garantisco atomicità: se faccio così
+        // nel momento in cui rilascio il lock non apro una finestra di incertezza(sezione critica)
+        // perchè lo spinlock manda in attesa tutti gli altri thread che vorrebbero andare in wait
+        
         // add what you need here
         // (don't forget to mark things volatile as needed)
 };
