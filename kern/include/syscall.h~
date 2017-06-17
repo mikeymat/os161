@@ -62,6 +62,9 @@ int sys_write(int fd, const char * buf,size_t nbytes,int *retval);
 int sys_read(int fd,char * buf,size_t nbytes,int *retval);
 void _exit(int code);
 int wait_pid(pid_t pid);
+int sys_open(char* filename,int openflag, int* retval);
+void sys_close(int fd);
+//int sys_fileWrite(int fd,const void *buffer,size_t nbytes, int* retval);
 
 
 

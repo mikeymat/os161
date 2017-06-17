@@ -125,6 +125,15 @@ syscall(struct trapframe *tf)
 	    err = wait_pid((pid_t) tf->tf_a0);
 		break;
 
+		case SYS_open:
+		err = sys_open((char *) tf->tf_a0,(int)tf->tf_a1,(int*) &retval);
+		break;
+
+		case SYS_close:
+		sys_close((int)tf->tf_a0);
+		err = 0; //cannot fail it's based on vfs_close!
+		break;
+
 	    /* Add stuff here */
 
 	    default:
